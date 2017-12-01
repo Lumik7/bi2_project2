@@ -1,9 +1,6 @@
 """
 Script for applying the data processing tasks
 """
-
-
-
 # -*- coding: utf-8 -*-
 import os
 import logging
@@ -19,7 +16,7 @@ def main():
     logger.info('start preprocessing data from raw:')
     preprocessing.preprocess()
     logger.info('files have been created in data/processed')
-    
+
 if __name__ == '__main__':
     log_fmt = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
     logging.basicConfig(level=logging.INFO, format=log_fmt)

@@ -5,9 +5,9 @@ import os
 import pandas as pd
 import numpy as np
 from copy import deepcopy
-from data import data_utils
+import data_utils
 
-def preprocess():
+def preprocess(remove_NIL=False):
     data_dir = data_utils.get_data_dir()
     raw_data_dir = os.path.join(data_dir, "raw","road_traffic_fine_managment_process.csv")
     data = pd.read_csv(raw_data_dir, sep=";")
@@ -20,7 +20,8 @@ def preprocess():
         new_table = new_table.dropna(how="all", axis=1)
         new_table = new_table.loc[:, (new_table != 0).any(axis=0)]
         new_table = new_table.loc[:, (new_table != float(0)).any(axis=0)]
-        new_table= new_table[new_table.apply(lambda x: sum([x_=='NIL' for x_ in x])==0, axis=1)]
+        if remove_NIL:
+            new_table= new_table[new_table.apply(lambda x: sum([x_=='NIL' for x_ in x])==0, axis=1)]
 
         out_dir = os.path.join(data_dir,"processed")
         # make sure directory exists

@@ -2,7 +2,7 @@ VU Business Intelligence II Project- Part 2 - University of Vienna
 Fine Management
 ==============================
 
-Analysis of log data from real-life event logs of an information system managing road traffic fines from the [netherlands](https://data.4tu.nl/repository/uuid:270fd440-1057-4fb9-89a9-b699b47990f5).
+Analysis of log data from real-life event logs of an information system managing road traffic fines from [Italy](https://data.4tu.nl/repository/uuid:270fd440-1057-4fb9-89a9-b699b47990f5).
 
 Project Organization
 ------------

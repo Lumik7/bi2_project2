@@ -2,7 +2,7 @@ import os
 import pandas as pd
 import numpy as np
 import tarfile
-from data import preprocessing
+import preprocessing
 
 def setup_directory(dir_name):
     """Setup directory in case it does not exist
