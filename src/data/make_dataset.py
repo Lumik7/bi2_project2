@@ -3,6 +3,9 @@ Script for applying the data processing tasks
 """
 # -*- coding: utf-8 -*-
 import os
+import sys
+src_dir = os.path.abspath(os.path.join(os.getcwd(), os.pardir, 'src'))
+sys.path.append(src_dir)
 import logging
 import preprocessing
 

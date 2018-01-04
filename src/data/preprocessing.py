@@ -5,7 +5,7 @@ import os
 import pandas as pd
 import numpy as np
 from copy import deepcopy
-import data_utils
+import data.data_utils
 
 def preprocess(remove_NIL=False):
     data_dir = data_utils.get_data_dir()
