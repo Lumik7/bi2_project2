@@ -74,3 +74,5 @@ target/
 
 # exclude maps with gps data
 reports/maps/
+
+/documentation/media/
