@@ -5,11 +5,12 @@ import os
 import pandas as pd
 import numpy as np
 from copy import deepcopy
-import data.data_utils
+from data import data_utils
+
 
 def preprocess(remove_NIL=False):
     data_dir = data_utils.get_data_dir()
-    raw_data_dir = os.path.join(data_dir, "raw","road_traffic_fine_managment_process.csv")
+    raw_data_dir = os.path.join(data_dir, "raw","road_traffic_fine_management_process.csv")
     data = pd.read_csv(raw_data_dir, sep=";")
     table_names = data["E:concept:name"].unique()
     for name in table_names:
