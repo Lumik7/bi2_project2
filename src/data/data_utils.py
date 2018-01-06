@@ -52,7 +52,7 @@ def read_csv_from_dir(dir_name="raw"):
     file_names = _get_file_names(dir_name=dir_name)
     data_dir = os.path.join(get_data_dir(), dir_name)
     csv_dfs = []
-    for file_name_i in file_names:
+    for file_name_i in sorted(file_names):
         path_i = os.path.join(data_dir,file_name_i)
         df = pd.read_csv(path_i, sep=";")
         csv_dfs.append(df)
