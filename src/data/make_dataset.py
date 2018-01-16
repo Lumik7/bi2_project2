@@ -10,14 +10,14 @@ import logging
 import preprocessing
 
 
-
 def main():
     """ Runs data processing scripts to turn raw data from (../raw) into
         cleaned data ready to be analyzed (saved in ../processed).
     """
     logger = logging.getLogger(__name__)
     logger.info('start preprocessing data from raw:')
-    preprocessing.preprocess()
+    #preprocessing.preprocess()
+    preprocessing.preprocess_tweets(save=True)
     logger.info('files have been created in data/processed')
 
 if __name__ == '__main__':

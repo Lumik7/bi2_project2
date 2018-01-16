@@ -6,6 +6,11 @@ import pandas as pd
 import numpy as np
 from copy import deepcopy
 from data import data_utils
+import json
+import re
+import nltk
+from nltk.corpus import stopwords
+import string
 
 
 def preprocess(remove_NIL=False):
@@ -30,6 +35,138 @@ def preprocess(remove_NIL=False):
         name_without_spaces = "_".join(name.split())
         out_dir = os.path.join(out_dir, str(name_without_spaces)+".csv")
         new_table.to_csv(out_dir, sep=";",index=False)
+
+def clean_twitter_text(tweets):
+    """
+    This function removes common tags and letters in Tweets
+    which create noise for the text mining task.
+    The regex was taken from:
+    https://stackoverflow.com/questions/8376691/how-to-remove-hashtag-user-link-of-a-tweet-using-regular-expression
+    and https://marcobonzanini.com/2015/03/09/mining-twitter-data-with-python-part-2/
+    it returns the tokenized tweets
+    """
+    emoticons_str = r"""
+    (?:
+        [:=;] # Eyes
+        [oO\-]? # Nose (optional)
+        [D\)\]\(\]/\\OpP] # Mouth
+    )"""
+
+    regex_str = [
+        emoticons_str,
+        r'<[^>]+>', # HTML tags
+        r'(?:@[\w_]+)', # @-mentions
+        r"(?:\#+[\w_]+[\w\'_\-]*[\w_]+)", # hash-tags
+        r'http[s]?://(?:[a-z]|[0-9]|[$-_@.&amp;+]|[!*\(\),]|(?:%[0-9a-f][0-9a-f]))+', # URLs
+
+        r'(?:(?:\d+,?)+(?:\.?\d+)?)', # numbers
+        r"(?:[a-z][a-z'\-_]+[a-z])", # words with - and '
+        r'(?:[\w_]+)', # other words
+        r'(?:\S)' # anything else
+    ]
+
+    tokens_re = re.compile(r'('+'|'.join(regex_str)+')', re.VERBOSE | re.IGNORECASE)
+    emoticon_re = re.compile(r'^'+emoticons_str+'$', re.VERBOSE | re.IGNORECASE)
+
+    tokenized_tweets = []
+    for tweet_i in tweets:
+        decoded_tweet = tweet_i.decode()
+        tokens = tokens_re.findall(decoded_tweet)
+        tokens = ' '.join(re.sub("(@[A-Za-z0-9]+)|([^0-9A-Za-z \t])|(\w+:\/\/\S+)"," ",str(tokens)).split()).lower()
+        tokenized_tweets.append(tokens)
+
+    return tokenized_tweets
+
+def _get_retweeted(tweets):
+    """
+    This method checks if the tweet was retweeted by the user in his/her
+    timeline. retweeted texts have "rt" at the beginning of the text.
+    """
+    return [1 if tweet.startswith( 'rt', 0, 2 ) else 0
+            for tweet in tweets]
+
+def _remove_retweeted_tag(tweets):
+    """
+    This method removes the "rt" of retweeted texts at the beginning
+    of a message.
+    """
+    cleaned_tweets = []
+    for tweet in tweets:
+        if tweet.startswith('rt', 0, 2 ):
+            cleaned_tweets.append(tweet[3:])
+        else:
+            cleaned_tweets.append(tweet)
+    return cleaned_tweets
+
+def remove_stopwords(tweets, verbose=False):
+    """
+    This method removes typical stopwords from the english language
+    and punctuation
+    """
+    nr_of_tweets = len(tweets)
+    stop_word_list = stopwords.words('english') + list(string.punctuation) + ['via']
+    cleaned_tweets = []
+        if verbose:
+            if i % 500 == 0:
+                print("Process tweet number: {} of {} ".format(i,nr_of_tweets))
+        cleaned_tweet_i = [term for term in tweet_i.split(" ") if term not in set(stop_word_list)]
+        cleaned_tweet_i = ",".join(cleaned_tweet_i)
+        cleaned_tweets.append(cleaned_tweet_i)
+    return cleaned_tweets
+
+def preprocess_tweets(file_path=None, columns_to_write=None, save=False, remove_stops=False):
+    """
+    This code provides a simple preprocessing routine to
+    extract the needed data from a file of tweets saved in
+    json format.
+    """
+    if file_path is None:
+        data_dir = os.path.join(data_utils.get_data_dir(), "raw")
+        file_path = os.path.join(
+            data_dir, "realDonaldTrump", "realDonaldTrump_tweets.json")
+    if not file_path.endswith(".json"):
+        raise ValueError("Only json files are supported!")
+
+    tweets = []
+    with open(file_path, 'r') as f:
+        for line in f:
+            tweets = json.loads(line)
+
+    if columns_to_write is None:
+        colnames = ["id_str", "created_at", "full_text", "favorite_count", "retweet_count"]
+    else:
+        colnames = list(columns_to_write)
+
+    extracted_tweets = []
+    for tweet_i in tweets:
+        tweet_extraction = [tweet_i[name].encode("utf-8") if (name == "full_text" or name == "text")  else tweet_i[name]
+                            for name in colnames]
+        extracted_tweets.append(tweet_extraction)
+
+    # Convert date
+    data = pd.DataFrame(extracted_tweets, columns=colnames)
+    data["created_at"] = pd.to_datetime(data["created_at"])
+    data["full_text"] = clean_twitter_text(data["full_text"])
+    data["retweeted"] = _get_retweeted(data["full_text"])
+    data["full_text"] = _remove_retweeted_tag(data["full_text"])
+    if remove_stops:
+        data["full_text"] = remove_stopwords(data["full_text"])
+
+    # remove nan values and empty strings
+    data = data.replace('', np.nan)
+    data = data.dropna()
+
+
+
+    if save:
+        # write csv file
+        data_dir = os.path.join(data_utils.get_data_dir(), "processed")
+        _, file_name = os.path.split(file_path)
+        file_name = file_name[:-5] + ".csv"
+        out_dir = os.path.join(data_dir, file_name)
+        data.to_csv(out_dir, sep=";", index=False)
+
+    return data
 
 
 ########

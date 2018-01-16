@@ -20,7 +20,7 @@ def get_data_dir():
     """
     project_dir = os.path.join(os.path.dirname(__file__), os.pardir, os.pardir)
     data_dir = os.path.join(project_dir,"data")
-    return data_dir
+    return os.path.abspath(data_dir)
 
 def _get_file_names(dir_name, file_ending=".csv"):
     """ Returns all file names from specified directory
