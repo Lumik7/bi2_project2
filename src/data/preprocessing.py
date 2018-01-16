@@ -70,7 +70,7 @@ def clean_twitter_text(tweets):
 
     tokenized_tweets = []
     for tweet_i in tweets:
-        decoded_tweet = tweet_i.decode()
+        decoded_tweet = tweet_i.decode("utf-8")
         tokens = tokens_re.findall(decoded_tweet)
         tokens = ' '.join(re.sub("(@[A-Za-z0-9]+)|([^0-9A-Za-z \t])|(\w+:\/\/\S+)"," ",str(tokens)).split()).lower()
         tokenized_tweets.append(tokens)
@@ -104,8 +104,9 @@ def remove_stopwords(tweets, verbose=False):
     and punctuation
     """
     nr_of_tweets = len(tweets)
-    stop_word_list = stopwords.words('english') + list(string.punctuation) + ['via']
+    stop_word_list = stopwords.words('english') + list(string.punctuation) + ["via","amp"]
     cleaned_tweets = []
+    for tweet_i in tweets:
         if verbose:
             if i % 500 == 0:
                 print("Process tweet number: {} of {} ".format(i,nr_of_tweets))
@@ -113,6 +114,46 @@ def remove_stopwords(tweets, verbose=False):
         cleaned_tweet_i = ",".join(cleaned_tweet_i)
         cleaned_tweets.append(cleaned_tweet_i)
     return cleaned_tweets
+
+def create_dataframe_from_json(file_path, colnames=None):
+    """
+    This function creates a pandas.DataFrame from
+    a json file which has multiple json files per line
+    in it.
+    Parameters
+    ----------
+    file_path: specifies the location of the json file.
+    colnames: list, default=None
+     specifies which tags should be extracted from the json
+     and used as columns in the dataframe. If default=None is
+     kept, then the following colnames are extracted from
+     the tweets:
+     ["id_str", "created_at", "full_text", "favorite_count", "retweet_count"]
+
+    Returns
+    -------
+    data: returns a new pandas.DataFrame
+    """
+    if colnames is None:
+        colnames = ["id_str", "created_at", "full_text", "favorite_count", "retweet_count"]
+    else:
+        colnames = list(colnames)
+
+    tweets = []
+    with open(file_path, 'r') as f:
+        for line in f:
+            tweets = json.loads(line)
+
+    extracted_tweets = []
+    for tweet_i in tweets:
+        tweet_extraction = [tweet_i[name].encode("utf-8") if (name == "full_text" or name == "text")  else tweet_i[name]
+                            for name in colnames]
+        extracted_tweets.append(tweet_extraction)
+
+    # Convert date
+    data = pd.DataFrame(extracted_tweets, columns=colnames)
+    return data
+
 
 def preprocess_tweets(file_path=None, columns_to_write=None, save=False, remove_stops=False):
     """
@@ -127,24 +168,12 @@ def preprocess_tweets(file_path=None, columns_to_write=None, save=False, remove_
     if not file_path.endswith(".json"):
         raise ValueError("Only json files are supported!")
 
-    tweets = []
-    with open(file_path, 'r') as f:
-        for line in f:
-            tweets = json.loads(line)
-
     if columns_to_write is None:
         colnames = ["id_str", "created_at", "full_text", "favorite_count", "retweet_count"]
     else:
         colnames = list(columns_to_write)
 
-    extracted_tweets = []
-    for tweet_i in tweets:
-        tweet_extraction = [tweet_i[name].encode("utf-8") if (name == "full_text" or name == "text")  else tweet_i[name]
-                            for name in colnames]
-        extracted_tweets.append(tweet_extraction)
-
-    # Convert date
-    data = pd.DataFrame(extracted_tweets, columns=colnames)
+    data = create_dataframe_from_json(file_path, colnames)
     data["created_at"] = pd.to_datetime(data["created_at"])
     data["full_text"] = clean_twitter_text(data["full_text"])
     data["retweeted"] = _get_retweeted(data["full_text"])
