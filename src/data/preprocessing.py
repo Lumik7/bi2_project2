@@ -173,15 +173,21 @@ def preprocess_tweets(file_path=None, columns_to_write=None, save=False, remove_
     else:
         colnames = list(columns_to_write)
 
+    # 1.Create dataframe
     data = create_dataframe_from_json(file_path, colnames)
+    # 2.Convert timestamps
     data["created_at"] = pd.to_datetime(data["created_at"])
+    # 3.Clean text of tweets from common tags,
+    # emojis, html tags, etc. which are common in tweets
     data["full_text"] = clean_twitter_text(data["full_text"])
+    # 4.Create retweet feature, where 1 == retweeted and 0 == own tweet
     data["retweeted"] = _get_retweeted(data["full_text"])
+    # 5.Retweets start with RT this will be removed
     data["full_text"] = _remove_retweeted_tag(data["full_text"])
     if remove_stops:
         data["full_text"] = remove_stopwords(data["full_text"])
 
-    # remove nan values and empty strings
+    # 6.Remove nan values and empty strings
     data = data.replace('', np.nan)
     data = data.dropna()
 
